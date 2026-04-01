@@ -1,4 +1,4 @@
 # Build artifacts
-idlebat
-idlebat.exe
+/idlebat
+/idlebat.exe
 dist/
