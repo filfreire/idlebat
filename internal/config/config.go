@@ -54,7 +54,10 @@ func ParseConfig(configFile string) (*Config, []ExpandedStep, error) {
 		return nil, nil, fmt.Errorf("parsing YAML: %w", err)
 	}
 
-	configDir := filepath.Dir(configFile)
+	configDir, err := filepath.Abs(filepath.Dir(configFile))
+	if err != nil {
+		return nil, nil, fmt.Errorf("resolving config dir: %w", err)
+	}
 
 	cfg := &Config{
 		Name:    raw.Name,

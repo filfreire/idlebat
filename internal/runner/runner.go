@@ -39,9 +39,24 @@ func RunInternal(stateDir, stepID string) int {
 	fmt.Print(banner)
 	appendToFile(logFile, banner)
 
-	// Change to work directory
-	if err := os.Chdir(cfg.WorkDir); err != nil {
-		msg := fmt.Sprintf("Failed to change to work dir %s: %s\n", cfg.WorkDir, err)
+	// Resolve work directory to absolute path, create it, then change into it
+	absWorkDir, err := filepath.Abs(cfg.WorkDir)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to resolve work dir %s: %s\n", cfg.WorkDir, err)
+		fmt.Print(msg)
+		appendToFile(logFile, msg)
+		writeExitAndDone(exitFile, doneFile, 1)
+		return 1
+	}
+	if err := os.MkdirAll(absWorkDir, 0755); err != nil {
+		msg := fmt.Sprintf("Failed to create work dir %s: %s\n", absWorkDir, err)
+		fmt.Print(msg)
+		appendToFile(logFile, msg)
+		writeExitAndDone(exitFile, doneFile, 1)
+		return 1
+	}
+	if err := os.Chdir(absWorkDir); err != nil {
+		msg := fmt.Sprintf("Failed to change to work dir %s: %s\n", absWorkDir, err)
 		fmt.Print(msg)
 		appendToFile(logFile, msg)
 		writeExitAndDone(exitFile, doneFile, 1)
@@ -83,7 +98,7 @@ func RunInternal(stateDir, stepID string) int {
 		"--output-format", "stream-json",
 	)
 	cmd.Stdin = strings.NewReader(string(promptData))
-	cmd.Dir = cfg.WorkDir
+	cmd.Dir = absWorkDir
 
 	// Capture stdout (stream-json) and stderr
 	stdout, err := cmd.StdoutPipe()

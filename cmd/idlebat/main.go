@@ -144,6 +144,10 @@ func run() int {
 			return 1
 		}
 
+		// Clean stale status files from previous runs
+		os.Remove(filepath.Join(stateDir, "status", step.ID+".done"))
+		os.Remove(filepath.Join(stateDir, "status", step.ID+".exit"))
+
 		stepStart := time.Now()
 
 		// Spawn terminal for step
