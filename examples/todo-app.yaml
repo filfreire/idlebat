@@ -1,0 +1,26 @@
+name: "Build a Todo App"
+work_dir: ./my-project
+
+steps:
+  - id: create-app
+    name: "Create the app"
+    prompt: |
+      Create a simple Python todo list app in todo.py with add, remove, and list functions.
+      Include a CLI interface using argparse.
+    check_files:
+      - todo.py
+
+  - id: add-tests
+    name: "Add tests"
+    prompt: |
+      Write pytest tests for todo.py in test_todo.py.
+      Cover add, remove, and list operations.
+    check_files:
+      - test_todo.py
+
+  - id: review
+    name: "Review and polish"
+    repeat: 2
+    prompt: |
+      Review todo.py and test_todo.py (iteration {{iteration}}/{{repeat}}).
+      Run the tests, fix any failures, and improve code quality.

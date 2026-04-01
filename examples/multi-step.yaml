@@ -1,0 +1,27 @@
+name: "Multi-Step Feature"
+work_dir: ~/projects/my-app
+model: claude-opus-4-6
+# env_file: ~/.env.secrets          # uncomment to load env vars before each step
+
+steps:
+  - id: plan
+    name: "Write implementation plan"
+    prompt: |
+      Read the codebase and write PLAN.md describing how to add a user
+      authentication feature. Include file changes needed and test strategy.
+    check_files:
+      - PLAN.md
+
+  - id: implement
+    name: "Implement the feature"
+    prompt_file: ./prompts/implement.txt
+    check_files:
+      - src/auth.py
+      - src/middleware.py
+
+  - id: test-and-fix
+    name: "Test and fix"
+    repeat: 3
+    prompt: |
+      Run the test suite (iteration {{iteration}}/{{repeat}}).
+      Fix any failures. If all tests pass, look for edge cases to add.
