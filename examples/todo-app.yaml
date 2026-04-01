@@ -1,5 +1,7 @@
 name: "Build a Todo App"
 work_dir: ./my-project
+# model: claude-opus-4-6
+# env_file: ~/.env.secrets          # uncomment to load env vars before each step
 
 steps:
   - id: create-app

@@ -1,6 +1,6 @@
 name: "Multi-Step Feature"
 work_dir: ~/projects/my-app
-model: claude-opus-4-6
+# model: claude-opus-4-6
 # env_file: ~/.env.secrets          # uncomment to load env vars before each step
 
 steps:
