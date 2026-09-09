@@ -1,0 +1,22 @@
+Publish the validated fixes for PR {{pr}} from the current worktree.
+
+Read the consolidation report at {{outputs.consolidate}}, then inspect the
+current branch, git status, and complete diff yourself.
+
+Confirm that the changes match the accepted findings and do not contain
+unrelated edits, generated junk, credentials, or other sensitive material. If
+the worktree has no changes to publish, do not create an empty commit; report
+that clearly and stop successfully.
+
+Otherwise:
+
+1. Run git diff --check.
+2. Stage only the intended fix and test files.
+3. Create one normal commit with a concise message that describes the fixes.
+4. Push the current branch to its configured upstream with a normal git push.
+5. Verify and report the resulting commit hash, branch, and push result.
+
+Never amend, rebase, reset, force-push, change branches, post a GitHub review,
+approve the PR, or merge it. If commit or push fails, do not work around branch
+protection or authentication controls. Report the exact failure and leave the
+worktree in a state the user can recover and inspect.

@@ -1,0 +1,22 @@
+Consolidate and validate the independent findings for PR {{pr}}.
+
+Read:
+- {{outputs.review-a}}
+- {{outputs.review-b}}
+- {{outputs.review-c}}
+
+For every claimed finding, inspect the current PR worktree and reproduce or
+disprove it yourself. Classify it as accepted, rejected, duplicate, or
+unverified. Do not repeat speculative concerns as confirmed findings.
+
+Requested action: {{action}}
+
+If the action is "draft", do not modify files or GitHub state. Produce a brief
+approval verdict and a polished proposed GitHub code review containing only
+validated, material findings. Use COMMENTED mode language, not REQUEST_CHANGES.
+
+If the action is "fix", apply the accepted fixes in the current worktree, add
+or update relevant tests, and run proportionate validation. Do not commit,
+push, post a review, approve, or otherwise mutate GitHub state. Return a report
+of accepted and rejected findings, files changed, tests run, failures still
+remaining, and whether the worktree is ready for the user to inspect and push.

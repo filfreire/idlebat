@@ -1,0 +1,16 @@
+Do a deep antagonistic code review of PR {{pr}} from the checked-out PR HEAD.
+
+Find concrete correctness bugs, regressions, security or reliability risks,
+and important missed tests. Inspect the full PR diff and relevant surrounding
+code. Anything you would otherwise ask the author to verify, investigate and
+verify yourself when the repository, tests, git history, or GitHub CLI can
+answer it.
+
+This is independent review {{letter}}. Do not read other reviewers' findings.
+Do not modify files, commit, push, post comments, approve, or otherwise mutate
+GitHub state.
+
+Return a complete review record as your final response. For every finding,
+include severity, file and line, the failure mode, evidence, and the smallest
+reasonable fix. Include commands or tests you ran and their results. If there
+are no material findings, say so explicitly and explain what you verified.

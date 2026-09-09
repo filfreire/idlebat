@@ -1,0 +1,64 @@
+version: 2
+name: "PR {{pr}} review"
+work_dir: .
+max_parallel: 3
+
+variables:
+  action: draft
+
+agents:
+  claude-reviewer:
+    provider: claude
+    model: "claude-opus-5[1m]"
+
+  codex-reviewer:
+    provider: codex
+
+  cursor-reviewer:
+    provider: cursor
+
+jobs:
+  - id: review-a
+    name: "Claude antagonistic review"
+    agent: claude-reviewer
+    isolation: git-worktree
+    prompt_file: ./prompts/antagonistic-review.txt
+    variables:
+      letter: A
+    output: findings/A-claude.md
+
+  - id: review-b
+    name: "Codex antagonistic review"
+    agent: codex-reviewer
+    isolation: git-worktree
+    prompt_file: ./prompts/antagonistic-review.txt
+    variables:
+      letter: B
+    output: findings/B-codex.md
+
+  - id: review-c
+    name: "Cursor antagonistic review"
+    agent: cursor-reviewer
+    isolation: git-worktree
+    prompt_file: ./prompts/antagonistic-review.txt
+    variables:
+      letter: C
+    output: findings/C-cursor.md
+
+  - id: consolidate
+    name: "Validate and consolidate findings"
+    agent: codex-reviewer
+    needs: [review-a, review-b, review-c]
+    isolation: shared
+    prompt_file: ./prompts/consolidate-review.txt
+    output: consolidated/review.md
+
+  - id: publish
+    name: "Commit and push validated fixes"
+    agent: codex-reviewer
+    needs: [consolidate]
+    when:
+      action: fix
+    isolation: shared
+    prompt_file: ./prompts/publish-fixes.txt
+    output: consolidated/publish.md

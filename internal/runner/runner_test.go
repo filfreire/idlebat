@@ -14,7 +14,7 @@ import (
 func setupStateDir(t *testing.T, workDir, stepID string) string {
 	t.Helper()
 	stateDir := t.TempDir()
-	for _, sub := range []string{"prompts", "logs", "status"} {
+	for _, sub := range []string{"prompts", "logs", "status", "jobs"} {
 		if err := os.MkdirAll(filepath.Join(stateDir, sub), 0755); err != nil {
 			t.Fatal(err)
 		}
@@ -25,6 +25,16 @@ func setupStateDir(t *testing.T, workDir, stepID string) string {
 		Model:   "test-model",
 	}
 	if err := state.WriteRunConfig(stateDir, cfg); err != nil {
+		t.Fatal(err)
+	}
+	// Use an unsupported provider so tests never invoke a real authenticated CLI.
+	job := config.ExpandedStep{
+		ID:       stepID,
+		Name:     stepID,
+		Provider: "test-provider",
+		WorkDir:  workDir,
+	}
+	if err := state.WriteJob(stateDir, job); err != nil {
 		t.Fatal(err)
 	}
 	promptFile := filepath.Join(stateDir, "prompts", stepID+".txt")

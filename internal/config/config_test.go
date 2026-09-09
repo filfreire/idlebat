@@ -179,6 +179,140 @@ func TestExpandPath(t *testing.T) {
 	}
 }
 
+func TestParseConfigV2AgentsDependenciesAndVariables(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "workflow.yaml")
+	if err := os.WriteFile(configFile, []byte(`
+version: 2
+name: "Review PR {{pr}}"
+work_dir: .
+agents:
+  reviewer:
+    provider: codex
+    model: test-model
+jobs:
+  - id: review-a
+    agent: reviewer
+    prompt: "Review PR {{pr}}"
+    output: findings/A.md
+  - id: consolidate
+    agent: cursor
+    needs: [review-a]
+    prompt: "Read {{outputs.review-a}}"
+    output: review.md
+`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, jobs, err := ParseConfigWithOptions(configFile, ParseOptions{
+		Variables: map[string]string{"pr": "123"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Name != "Review PR 123" || cfg.Legacy || cfg.MaxParallel != 3 {
+		t.Fatalf("unexpected config: %+v", cfg)
+	}
+	if len(jobs) != 2 {
+		t.Fatalf("got %d jobs", len(jobs))
+	}
+	if jobs[0].Provider != "codex" || jobs[0].Model != "test-model" {
+		t.Errorf("unexpected resolved agent: %+v", jobs[0])
+	}
+	if jobs[0].Prompt != "Review PR 123" {
+		t.Errorf("unexpected prompt: %q", jobs[0].Prompt)
+	}
+	if len(jobs[1].Needs) != 1 || jobs[1].Needs[0] != "review-a" {
+		t.Errorf("unexpected dependencies: %v", jobs[1].Needs)
+	}
+	if jobs[1].Prompt != "Read {{outputs.review-a}}" {
+		t.Errorf("runtime output template was resolved too early: %q", jobs[1].Prompt)
+	}
+}
+
+func TestParseConfigFiltersJobsByVariables(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "workflow.yaml")
+	if err := os.WriteFile(configFile, []byte(`
+version: 2
+variables:
+  action: draft
+jobs:
+  - id: review
+    prompt: review
+  - id: publish
+    needs: [review]
+    when:
+      action: fix
+    prompt: publish
+`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, draftJobs, err := ParseConfig(configFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(draftJobs) != 1 || draftJobs[0].ID != "review" {
+		t.Fatalf("unexpected draft jobs: %+v", draftJobs)
+	}
+
+	_, fixJobs, err := ParseConfigWithOptions(configFile, ParseOptions{
+		Variables: map[string]string{"action": "fix"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fixJobs) != 2 || fixJobs[1].ID != "publish" {
+		t.Fatalf("unexpected fix jobs: %+v", fixJobs)
+	}
+}
+
+func TestLegacyStepsRemainSequential(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "workflow.yaml")
+	if err := os.WriteFile(configFile, []byte(`
+steps:
+  - id: one
+    prompt: one
+  - id: two
+    prompt: two
+`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	_, jobs, err := ParseConfig(configFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jobs[0].Needs) != 0 || len(jobs[1].Needs) != 1 || jobs[1].Needs[0] != "one" {
+		t.Fatalf("legacy jobs are not sequential: %+v", jobs)
+	}
+}
+
+func TestParseConfigRejectsInvalidGraph(t *testing.T) {
+	tests := []struct {
+		name string
+		yaml string
+	}{
+		{"unknown dependency", "jobs:\n  - id: one\n    needs: [missing]\n    prompt: hi\n"},
+		{"cycle", "jobs:\n  - id: one\n    needs: [two]\n    prompt: hi\n  - id: two\n    needs: [one]\n    prompt: hi\n"},
+		{"duplicate", "jobs:\n  - id: one\n    prompt: hi\n  - id: one\n    prompt: hi\n"},
+		{"unsafe output", "jobs:\n  - id: one\n    output: ../outside\n    prompt: hi\n"},
+		{"mixed formats", "steps:\n  - id: old\n    prompt: hi\njobs:\n  - id: new\n    prompt: hi\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configFile := filepath.Join(t.TempDir(), "workflow.yaml")
+			if err := os.WriteFile(configFile, []byte(tt.yaml), 0644); err != nil {
+				t.Fatal(err)
+			}
+			if _, _, err := ParseConfig(configFile); err == nil {
+				t.Fatal("expected parse error")
+			}
+		})
+	}
+}
+
 func containsStr(s, sub string) bool {
 	for i := 0; i <= len(s)-len(sub); i++ {
 		if s[i:i+len(sub)] == sub {
